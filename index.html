@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senku - AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #534AB7;
+            --primary-hover: #7F77DD;
+            --bg: #f5f5f5;
+            --surface: #ffffff;
+            --text: #333333;
+            --text-secondary: #666666;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-text p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .header-credit {
+            margin-left: auto;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-button:hover {
+            color: var(--primary-hover);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--text);
+            background-color: var(--surface);
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(83, 74, 183, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .options-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .options-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button[type="submit"],
+        button.primary {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover,
+        button.primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button[type="submit"]:disabled,
+        button.primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .output {
+            background-color: #f9f9f9;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.8;
+        }
+
+        .error {
+            background-color: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #fcc;
+            margin-top: 1rem;
+        }
+
+        .success {
+            background-color: #efe;
+            color: #3c3;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #cfc;
+            margin-top: 1rem;
+        }
+
+        .chat-history {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            background-color: #f9f9f9;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .chat-message.user {
+            background-color: var(--primary);
+            color: white;
+            margin-left: 2rem;
+        }
+
+        .chat-message.assistant {
+            background-color: #e8e8e8;
+            color: var(--text);
+            margin-right: 2rem;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input-group input {
+            flex: 1;
+        }
+
+        .chat-input-group button {
+            padding: 0.75rem 1.5rem;
+        }
+
+        .clear-button {
+            background-color: #999;
+        }
+
+        .clear-button:hover {
+            background-color: #777;
+        }
+
+        .option-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .option-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .option-btn.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .ideas-list {
+            list-style: none;
+            counter-reset: idea-counter;
+        }
+
+        .ideas-list li {
+            counter-increment: idea-counter;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f9f9f9;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+        }
+
+        .ideas-list li::before {
+            content: counter(idea-counter) ". ";
+            font-weight: bold;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">S</div>
+        <div class="header-text">
+            <h1>Senku</h1>
+            <p>All-in-one AI assistant</p>
+        </div>
+        <div class="header-credit">Created by Jainav</div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('chat')">Chat</button>
+            <button class="tab-button" onclick="switchTab('summarizer')">Summarizer</button>
+            <button class="tab-button" onclick="switchTab('writer')">Writer</button>
+            <button class="tab-button" onclick="switchTab('ideas')">Idea Generator</button>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat" class="tab-content active">
+            <div class="card">
+                <h2>Chat</h2>
+                <div id="chatHistory" class="chat-history">
+                    <div class="chat-message assistant">Hello! I'm Senku, your AI assistant. How can I help you today?</div>
+                </div>
+                <form onsubmit="sendChatMessage(event)" class="form-group">
+                    <div class="chat-input-group">
+                        <input type="text" id="chatInput" placeholder="Type your message..." required>
+                        <button type="submit" class="primary">Send</button>
+                        <button type="button" class="clear-button" onclick="clearChat()">Clear</button>
+                    </div>
+                </form>
+                <div id="chatError"></div>
+            </div>
+        </div>
+
+        <!-- Summarizer Tab -->
+        <div id="summarizer" class="tab-content">
+            <div class="card">
+                <h2>Summarizer</h2>
+                <form onsubmit="summarizeText(event)">
+                    <div class="form-group">
+                        <label for="textToSummarize">Text to Summarize</label>
+                        <textarea id="textToSummarize" placeholder="Paste your text here..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Output Style</label>
+                        <div class="option-buttons">
+                            <button type="button" class="option-btn active" onclick="setSummarizerStyle(this, 'bullet')">Bullet Points</button>
+                            <button type="button" class="option-btn" onclick="setSummarizerStyle(this, 'short')">Short Paragraph</button>
+                            <button type="button" class="option-btn" onclick="setSummarizerStyle(this, 'detailed')">Detailed</button>
+                        </div>
+                        <input type="hidden" id="summarizerStyle" value="bullet">
+                    </div>
+                    <button type="submit" class="primary">Summarize</button>
+                </form>
+                <div id="summarizerLoading" style="display: none; margin-top: 1rem;">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Creating summary...</span>
+                    </div>
+                </div>
+                <div id="summarizerOutput"></div>
+                <div id="summarizerError"></div>
+            </div>
+        </div>
+
+        <!-- Writer Tab -->
+        <div id="writer" class="tab-content">
+            <div class="card">
+                <h2>Writer</h2>
+                <form onsubmit="generateContent(event)">
+                    <div class="form-group">
+                        <label for="writerTopic">Topic</label>
+                        <input type="text" id="writerTopic" placeholder="What would you like to write about?" required>
+                    </div>
+                    <div class="options-row">
+                        <div class="form-group">
+                            <label>Content Type</label>
+                            <div class="option-buttons">
+                                <button type="button" class="option-btn active" onclick="setWriterType(this, 'email')">Email</button>
+                                <button type="button" class="option-btn" onclick="setWriterType(this, 'caption')">Caption</button>
+                                <button type="button" class="option-btn" onclick="setWriterType(this, 'essay')">Essay</button>
+                                <button type="button" class="option-btn" onclick="setWriterType(this, 'bio')">Bio</button>
+                                <button type="button" class="option-btn" onclick="setWriterType(this, 'letter')">Cover Letter</button>
+                            </div>
+                            <input type="hidden" id="writerType" value="email">
+                        </div>
+                        <div class="form-group">
+                            <label>Tone</label>
+                            <div class="option-buttons">
+                                <button type="button" class="option-btn active" onclick="setWriterTone(this, 'professional')">Professional</button>
+                                <button type="button" class="option-btn" onclick="setWriterTone(this, 'casual')">Casual</button>
+                                <button type="button" class="option-btn" onclick="setWriterTone(this, 'friendly')">Friendly</button>
+                                <button type="button" class="option-btn" onclick="setWriterTone(this, 'persuasive')">Persuasive</button>
+                            </div>
+                            <input type="hidden" id="writerTone" value="professional">
+                        </div>
+                    </div>
+                    <button type="submit" class="primary">Generate Content</button>
+                </form>
+                <div id="writerLoading" style="display: none; margin-top: 1rem;">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Generating content...</span>
+                    </div>
+                </div>
+                <div id="writerOutput"></div>
+                <div id="writerError"></div>
+            </div>
+        </div>
+
+        <!-- Idea Generator Tab -->
+        <div id="ideas" class="tab-content">
+            <div class="card">
+                <h2>Idea Generator</h2>
+                <form onsubmit="generateIdeas(event)">
+                    <div class="form-group">
+                        <label for="ideaTopic">Topic</label>
+                        <input type="text" id="ideaTopic" placeholder="What topic would you like ideas for?" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Ideas</label>
+                        <div class="option-buttons">
+                            <button type="button" class="option-btn active" onclick="setIdeaCount(this, '5')">5 Ideas</button>
+                            <button type="button" class="option-btn" onclick="setIdeaCount(this, '10')">10 Ideas</button>
+                            <button type="button" class="option-btn" onclick="setIdeaCount(this, '15')">15 Ideas</button>
+                        </div>
+                        <input type="hidden" id="ideaCount" value="5">
+                    </div>
+                    <button type="submit" class="primary">Generate Ideas</button>
+                </form>
+                <div id="ideasLoading" style="display: none; margin-top: 1rem;">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Generating ideas...</span>
+                    </div>
+                </div>
+                <div id="ideasOutput"></div>
+                <div id="ideasError"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE'; // Replace with your actual API key
+        const API_URL = 'https://api.anthropic.com/v1/messages';
+        const MODEL = 'claude-sonnet-4-20250514';
+        const SYSTEM_PROMPT = 'You are Senku, a helpful all-in-one AI assistant created by Jainav. Be concise, friendly, and helpful.';
+
+        // Chat history storage
+        let chatHistory = [];
+
+        // Tab switching
+        function switchTab(tabName) {
+            const contents = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+            
+            contents.forEach(content => content.classList.remove('active'));
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Helper function to call Claude API
+        async function callClaude(messages) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': API_KEY,
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model: MODEL,
+                    max_tokens: 2048,
+                    system: SYSTEM_PROMPT,
+                    messages: messages
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'API request failed');
+            }
+
+            const data = await response.json();
+            return data.content[0].text;
+        }
+
+        // Chat functions
+        async function sendChatMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Clear input
+            input.value = '';
+
+            // Add user message to history
+            chatHistory.push({ role: 'user', content: message });
+
+            // Display user message
+            const history = document.getElementById('chatHistory');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'chat-message user';
+            userDiv.textContent = message;
+            history.appendChild(userDiv);
+            history.scrollTop = history.scrollHeight;
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-message assistant loading';
+            loadingDiv.innerHTML = '<div class="spinner"></div><span>Thinking...</span>';
+            history.appendChild(loadingDiv);
+            history.scrollTop = history.scrollHeight;
+
+            try {
+                const response = await callClaude(chatHistory);
+                
+                // Remove loading
+                loadingDiv.remove();
+
+                // Add assistant message to history
+                chatHistory.push({ role: 'assistant', content: response });
+
+                // Display assistant message
+                const assistantDiv = document.createElement('div');
+                assistantDiv.className = 'chat-message assistant';
+                assistantDiv.textContent = response;
+                history.appendChild(assistantDiv);
+                history.scrollTop = history.scrollHeight;
+
+                document.getElementById('chatError').innerHTML = '';
+            } catch (error) {
+                loadingDiv.remove();
+                document.getElementById('chatError').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            document.getElementById('chatHistory').innerHTML = '<div class="chat-message assistant">Hello! I\'m Senku, your AI assistant. How can I help you today?</div>';
+            document.getElementById('chatInput').value = '';
+            document.getElementById('chatError').innerHTML = '';
+        }
+
+        // Summarizer functions
+        function setSummarizerStyle(btn, style) {
+            document.querySelectorAll('#summarizer .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('summarizerStyle').value = style;
+        }
+
+        async function summarizeText(e) {
+            e.preventDefault();
+            const text = document.getElementById('textToSummarize').value;
+            const style = document.getElementById('summarizerStyle').value;
+            
+            const styles = {
+                bullet: 'bullet points',
+                short: 'short paragraph',
+                detailed: 'detailed summary'
+            };
+
+            const loading = document.getElementById('summarizerLoading');
+            const output = document.getElementById('summarizerOutput');
+            const error = document.getElementById('summarizerError');
+
+            loading.style.display = 'block';
+            output.innerHTML = '';
+            error.innerHTML = '';
+
+            try {
+                const response = await callClaude([{
+                    role: 'user',
+                    content: `Please summarize the following text as ${styles[style]}:\n\n${text}`
+                }]);
+
+                output.innerHTML = `<div class="output">${response}</div>`;
+            } catch (err) {
+                error.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Writer functions
+        function setWriterType(btn, type) {
+            document.querySelectorAll('#writer .form-group:nth-child(2) .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('writerType').value = type;
+        }
+
+        function setWriterTone(btn, tone) {
+            document.querySelectorAll('#writer .form-group:nth-child(2) .option-buttons:last-of-type .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('writerTone').value = tone;
+        }
+
+        async function generateContent(e) {
+            e.preventDefault();
+            const topic = document.getElementById('writerTopic').value;
+            const type = document.getElementById('writerType').value;
+            const tone = document.getElementById('writerTone').value;
+
+            const loading = document.getElementById('writerLoading');
+            const output = document.getElementById('writerOutput');
+            const error = document.getElementById('writerError');
+
+            loading.style.display = 'block';
+            output.innerHTML = '';
+            error.innerHTML = '';
+
+            try {
+                const response = await callClaude([{
+                    role: 'user',
+                    content: `Write a ${type} about "${topic}" in a ${tone} tone.`
+                }]);
+
+                output.innerHTML = `<div class="output">${response}</div>`;
+            } catch (err) {
+                error.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Idea Generator functions
+        function setIdeaCount(btn, count) {
+            document.querySelectorAll('#ideas .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('ideaCount').value = count;
+        }
+
+        async function generateIdeas(e) {
+            e.preventDefault();
+            const topic = document.getElementById('ideaTopic').value;
+            const count = document.getElementById('ideaCount').value;
+
+            const loading = document.getElementById('ideasLoading');
+            const output = document.getElementById('ideasOutput');
+            const error = document.getElementById('ideasError');
+
+            loading.style.display = 'block';
+            output.innerHTML = '';
+            error.innerHTML = '';
+
+            try {
+                const response = await callClaude([{
+                    role: 'user',
+                    content: `Generate ${count} creative ideas about "${topic}". Format as a numbered list with each idea having a one-line explanation.`
+                }]);
+
+                output.innerHTML = `<div class="output">${response}</div>`;
+            } catch (err) {
+                error.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
